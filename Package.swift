@@ -29,7 +29,14 @@ let package = Package(
         ),
         .testTarget(
             name: "SwiftFountainTests",
-            dependencies: ["SwiftFountain"]
+            dependencies: ["SwiftFountain"],
+            resources: [
+                .copy("test.fountain"),
+                .copy("test.textbundle"),
+                .copy("test.highland"),
+                .copy("characters.json"),
+                .copy("outline.json")
+            ]
         ),
     ]
 )

@@ -7,8 +7,10 @@ import Foundation
 }
 
 @Test func testLoadFromTextBundle() async throws {
-    // Get the path to the test bundle directly
-    let testBundleURL = URL(fileURLWithPath: "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.textbundle")
+    // Get the path to the test bundle from resources
+    guard let testBundleURL = Bundle.module.url(forResource: "test", withExtension: "textbundle") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.textbundle not found in test bundle"])
+    }
 
     let script = try FountainScript(textBundleURL: testBundleURL)
 
@@ -45,8 +47,10 @@ import Foundation
 }
 
 @Test func testExtractCharacters() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let script = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let script = try FountainScript(file: testFountainURL.path)
 
     let characters = script.extractCharacters()
 
@@ -72,8 +76,10 @@ import Foundation
 }
 
 @Test func testWriteCharactersJSON() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let script = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let script = try FountainScript(file: testFountainURL.path)
 
     let tempDir = FileManager.default.temporaryDirectory
     let outputPath = tempDir.appendingPathComponent("test-characters.json")
@@ -93,17 +99,15 @@ import Foundation
     #expect(characters.values.allSatisfy { $0.gender.unspecified != nil }, "All characters should have gender.unspecified")
     #expect(characters.values.allSatisfy { !$0.scenes.isEmpty }, "All characters should have scenes")
 
-    // Also write to a permanent location for inspection
-    let permanentPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/generated-characters.json"
-    try script.writeCharactersJSON(toFile: permanentPath)
-
     // Clean up temp file
     try? FileManager.default.removeItem(at: outputPath)
 }
 
 @Test func testExtractOutline() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let script = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let script = try FountainScript(file: testFountainURL.path)
 
     let outline = script.extractOutline()
 
@@ -133,8 +137,10 @@ import Foundation
 }
 
 @Test func testWriteOutlineJSON() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let script = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let script = try FountainScript(file: testFountainURL.path)
 
     let tempDir = FileManager.default.temporaryDirectory
     let outputPath = tempDir.appendingPathComponent("test-outline.json")
@@ -157,17 +163,15 @@ import Foundation
         #expect(!element.type.isEmpty, "Each element should have a type")
     }
 
-    // Also write to a permanent location for inspection
-    let permanentPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/generated-outline.json"
-    try script.writeOutlineJSON(toFile: permanentPath)
-
     // Clean up temp file
     try? FileManager.default.removeItem(at: outputPath)
 }
 
 @Test func testWriteToTextBundleWithResources() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let script = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let script = try FountainScript(file: testFountainURL.path)
 
     let tempDir = FileManager.default.temporaryDirectory
     let outputURL = try script.writeToTextBundleWithResources(
@@ -208,7 +212,9 @@ import Foundation
 }
 
 @Test func testLoadFromHighland() async throws {
-    let highlandURL = URL(fileURLWithPath: "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.highland")
+    guard let highlandURL = Bundle.module.url(forResource: "test", withExtension: "highland") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.highland not found in test bundle"])
+    }
 
     let script = try FountainScript(highlandURL: highlandURL)
 
@@ -218,8 +224,10 @@ import Foundation
 }
 
 @Test func testWriteToHighland() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let script = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let script = try FountainScript(file: testFountainURL.path)
 
     let tempDir = FileManager.default.temporaryDirectory
     let highlandURL = try script.writeToHighland(
@@ -241,8 +249,10 @@ import Foundation
 }
 
 @Test func testHighlandRoundTrip() async throws {
-    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
-    let originalScript = try FountainScript(file: testFountainPath)
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found in test bundle"])
+    }
+    let originalScript = try FountainScript(file: testFountainURL.path)
 
     let tempDir = FileManager.default.temporaryDirectory
 
