@@ -9,7 +9,8 @@
       "Bash(unzip:*)",
       "Bash(git remote get-url:*)",
       "Bash(tree:*)",
-      "Bash(xcodebuild:*)"
+      "Bash(xcodebuild:*)",
+      "Bash(git tag:*)"
     ],
     "deny": [],
     "ask": []
