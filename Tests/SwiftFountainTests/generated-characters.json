@@ -1,0 +1,248 @@
+{
+  "ANNOUNCER" : {
+    "counts" : {
+      "lineCount" : 1,
+      "wordCount" : 23
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      15
+    ]
+  },
+  "ASSISTANT #2" : {
+    "counts" : {
+      "lineCount" : 1,
+      "wordCount" : 8
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      36
+    ]
+  },
+  "BERNARD" : {
+    "counts" : {
+      "lineCount" : 82,
+      "wordCount" : 558
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      0,
+      1,
+      3,
+      4,
+      10,
+      11,
+      12,
+      15,
+      17,
+      19,
+      21,
+      24,
+      25,
+      27,
+      29,
+      31,
+      32,
+      33,
+      42,
+      43,
+      44,
+      45,
+      47
+    ]
+  },
+  "DOG WALKER" : {
+    "counts" : {
+      "lineCount" : 4,
+      "wordCount" : 25
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      8,
+      9,
+      12
+    ]
+  },
+  "DONNIE" : {
+    "counts" : {
+      "lineCount" : 4,
+      "wordCount" : 93
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      25,
+      27
+    ]
+  },
+  "DONNIE LANIER" : {
+    "counts" : {
+      "lineCount" : 1,
+      "wordCount" : 10
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      25
+    ]
+  },
+  "EDITOR" : {
+    "counts" : {
+      "lineCount" : 8,
+      "wordCount" : 33
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      35
+    ]
+  },
+  "FRONT DESK ASSISTANT" : {
+    "counts" : {
+      "lineCount" : 2,
+      "wordCount" : 14
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      36
+    ]
+  },
+  "KILLIAN" : {
+    "counts" : {
+      "lineCount" : 76,
+      "wordCount" : 674
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      0,
+      25,
+      27,
+      29,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      39,
+      41,
+      43,
+      47
+    ]
+  },
+  "MASON" : {
+    "counts" : {
+      "lineCount" : 26,
+      "wordCount" : 255
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      10,
+      11,
+      12,
+      34,
+      39,
+      41,
+      43
+    ]
+  },
+  "MICKEY BLAZE" : {
+    "counts" : {
+      "lineCount" : 16,
+      "wordCount" : 257
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      25,
+      36,
+      37,
+      38,
+      39
+    ]
+  },
+  "STEVE" : {
+    "counts" : {
+      "lineCount" : 1,
+      "wordCount" : 7
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      43
+    ]
+  },
+  "SYLVIA" : {
+    "counts" : {
+      "lineCount" : 12,
+      "wordCount" : 115
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      1,
+      3,
+      4
+    ]
+  },
+  "TROLLING MOURNER" : {
+    "counts" : {
+      "lineCount" : 2,
+      "wordCount" : 59
+    },
+    "gender" : {
+      "unspecified" : {
+
+      }
+    },
+    "scenes" : [
+      25
+    ]
+  }
+}

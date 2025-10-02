@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(swift build)",
+      "Bash(cat:*)",
+      "Bash(swift test)",
+      "Bash(swift:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
