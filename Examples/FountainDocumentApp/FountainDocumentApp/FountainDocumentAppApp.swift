@@ -7,15 +7,14 @@
 
 import SwiftUI
 import SwiftFountain
+import SwiftData
 
 @main
 struct FountainDocumentAppApp: App {
-    let persistenceController = PersistenceController.shared
-
     var body: some Scene {
         DocumentGroup(newDocument: { FountainDocument() }) { file in
             ContentView(document: file.$document)
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .modelContainer(for: [FountainDocumentModel.self, FountainElementModel.self, TitlePageEntryModel.self])
         }
     }
 }

@@ -7,59 +7,55 @@
 
 import SwiftUI
 import SwiftFountain
-import CoreData
+import SwiftData
 
 struct ContentView: View {
     @Binding var document: FountainDocument
-    @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.modelContext) private var modelContext
 
-    @State private var documentEntity: FountainDocumentEntity?
+    @State private var documentModel: FountainDocumentModel?
     @State private var isLoading = false
 
     var body: some View {
         NavigationSplitView {
             List {
-                if let entity = documentEntity {
+                if let model = documentModel {
                     Section("Title Page") {
-                        if let titlePage = entity.titlePage?.array as? [TitlePageEntry] {
-                            ForEach(titlePage) { entry in
+                        ForEach(model.titlePage) { entry in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(entry.key)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                ForEach(entry.values, id: \.self) { value in
+                                    Text(value)
+                                        .font(.body)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+
+                    Section("Elements (\(model.elements.count))") {
+                        ForEach(model.elements.prefix(20)) { element in
+                            NavigationLink {
+                                ElementDetailView(element: element)
+                            } label: {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(entry.key)
+                                    Text(element.elementType)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
-                                    ForEach(entry.values, id: \.self) { value in
-                                        Text(value)
-                                            .font(.body)
-                                    }
+                                    Text(element.elementText)
+                                        .font(.body)
+                                        .lineLimit(2)
                                 }
                                 .padding(.vertical, 4)
                             }
                         }
-                    }
-
-                    Section("Elements (\(entity.elements?.count ?? 0))") {
-                        if let elements = entity.elements?.array as? [FountainElementEntity] {
-                            ForEach(elements.prefix(20)) { element in
-                                NavigationLink {
-                                    ElementDetailView(element: element)
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(element.elementType)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        Text(element.elementText)
-                                            .font(.body)
-                                            .lineLimit(2)
-                                    }
-                                    .padding(.vertical, 4)
-                                }
-                            }
-                            if elements.count > 20 {
-                                Text("... and \(elements.count - 20) more elements")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .padding(.vertical, 4)
-                            }
+                        if model.elements.count > 20 {
+                            Text("... and \(model.elements.count - 20) more elements")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .padding(.vertical, 4)
                         }
                     }
                 } else if isLoading {
@@ -72,15 +68,15 @@ struct ContentView: View {
             .navigationTitle(document.script.filename ?? "Untitled")
             .toolbar {
                 ToolbarItem {
-                    Button("Parse to CoreData") {
+                    Button("Parse to SwiftData") {
                         parseDocument()
                     }
                     .disabled(isLoading)
                 }
             }
         } detail: {
-            if let entity = documentEntity {
-                ScriptDetailView(entity: entity)
+            if let model = documentModel {
+                ScriptDetailView(model: model)
             } else {
                 Text("Select an element to view details")
                     .foregroundColor(.secondary)
@@ -97,18 +93,18 @@ struct ContentView: View {
     private func parseDocument() {
         isLoading = true
 
-        // Clear existing document entity
-        if let existing = documentEntity {
-            viewContext.delete(existing)
+        // Clear existing document model
+        if let existing = documentModel {
+            modelContext.delete(existing)
         }
 
         // Parse the document
-        let entity = FountainDocumentParser.parse(script: document.script, in: viewContext)
-        documentEntity = entity
+        let model = FountainDocumentParserSwiftData.parse(script: document.script, in: modelContext)
+        documentModel = model
 
         // Save the context
         do {
-            try viewContext.save()
+            try modelContext.save()
             isLoading = false
         } catch {
             print("Failed to save context: \(error)")
@@ -118,7 +114,7 @@ struct ContentView: View {
 }
 
 struct ElementDetailView: View {
-    let element: FountainElementEntity
+    let element: FountainElementModel
 
     var body: some View {
         Form {
@@ -140,22 +136,22 @@ struct ElementDetailView: View {
 }
 
 struct ScriptDetailView: View {
-    let entity: FountainDocumentEntity
+    let model: FountainDocumentModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if let filename = entity.filename {
+            if let filename = model.filename {
                 Text("Filename: \(filename)")
                     .font(.headline)
             }
 
-            Text("Elements: \(entity.elements?.count ?? 0)")
-            Text("Title Page Entries: \(entity.titlePage?.count ?? 0)")
-            Text("Suppress Scene Numbers: \(entity.suppressSceneNumbers ? "Yes" : "No")")
+            Text("Elements: \(model.elements.count)")
+            Text("Title Page Entries: \(model.titlePage.count)")
+            Text("Suppress Scene Numbers: \(model.suppressSceneNumbers ? "Yes" : "No")")
 
             Divider()
 
-            if let content = entity.rawContent {
+            if let content = model.rawContent {
                 ScrollView {
                     Text(content)
                         .font(.system(.body, design: .monospaced))

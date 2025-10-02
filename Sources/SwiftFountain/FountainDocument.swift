@@ -27,6 +27,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// UTType extensions for Fountain document types
+@available(macOS 11.0, iOS 14.0, *)
 public extension UTType {
     static var fountain: UTType {
         UTType(importedAs: "com.quote-unquote.fountain")
@@ -42,6 +43,7 @@ public extension UTType {
 }
 
 /// Document wrapper for SwiftUI document-based apps
+@available(macOS 11.0, iOS 14.0, *)
 public final class FountainDocument: ReferenceFileDocument {
     public static var readableContentTypes: [UTType] {
         [.fountain, .highland, .textBundle]
@@ -64,7 +66,7 @@ public final class FountainDocument: ReferenceFileDocument {
 
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension(configuration.contentType?.preferredFilenameExtension ?? "fountain")
+            .appendingPathExtension(configuration.contentType.preferredFilenameExtension ?? "fountain")
 
         try fileURL.write(to: tempURL)
 
