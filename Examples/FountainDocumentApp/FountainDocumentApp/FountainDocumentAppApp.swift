@@ -14,7 +14,7 @@ struct FountainDocumentAppApp: App {
     var body: some Scene {
         DocumentGroup(newDocument: { FountainDocument() }) { file in
             ContentView(document: file.$document)
-                .modelContainer(for: [FountainDocumentModel.self, FountainElementModel.self, TitlePageEntryModel.self])
+                .modelContainer(for: FountainDocumentModel.self)
         }
     }
 }

@@ -64,41 +64,10 @@ extension FountainScript {
             throw HighlandError.noTextBundleFound
         }
 
-        // Highland files may have text.md or text.markdown instead of .fountain
-        // Try to find a .fountain file first, then fall back to text.md/text.markdown
-        let textBundleContents = try fileManager.contentsOfDirectory(
-            at: textBundleURL,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
-        )
-
-        var sourceURL: URL?
-
-        // First, try to find a .fountain file
-        for fileURL in textBundleContents {
-            if fileURL.pathExtension.lowercased() == "fountain" {
-                sourceURL = fileURL
-                break
-            }
-        }
-
-        // If no .fountain file, try text.md or text.markdown
-        if sourceURL == nil {
-            for fileURL in textBundleContents {
-                let filename = fileURL.lastPathComponent
-                if filename == "text.md" || filename == "text.markdown" {
-                    sourceURL = fileURL
-                    break
-                }
-            }
-        }
-
-        guard let url = sourceURL else {
-            throw FountainTextBundleError.noFountainFileFound
-        }
-
-        try loadFile(url.path, parser: parser)
-        filename = url.lastPathComponent
+        // Use the shared getContentURL logic to find .fountain or .md files
+        let contentURL = try getContentURL(from: textBundleURL)
+        try loadFile(contentURL.path, parser: parser)
+        filename = contentURL.lastPathComponent
     }
 
     /// Write the current FountainScript to a Highland file (.highland)

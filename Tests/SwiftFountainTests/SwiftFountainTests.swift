@@ -6,6 +6,63 @@ import Foundation
     // Write your test here and use APIs like `#expect(...)` to check expected conditions.
 }
 
+@Test func testGetContentURL() async throws {
+    let script = FountainScript()
+
+    // Test with .textbundle (has both .fountain and .md files)
+    guard let testBundleURL = Bundle.module.url(forResource: "test", withExtension: "textbundle") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.textbundle not found in test bundle"])
+    }
+
+    let contentURL = try script.getContentURL(from: testBundleURL)
+    #expect(FileManager.default.fileExists(atPath: contentURL.path), "Content file should exist")
+
+    // Should prioritize .fountain over .md
+    #expect(contentURL.pathExtension == "fountain", "Should return .fountain file when both exist")
+
+    // Verify the content is not empty
+    let content = try String(contentsOf: contentURL, encoding: .utf8)
+    #expect(!content.isEmpty, "Content should not be empty")
+
+    // Test with .highland (contains a .textbundle inside)
+    guard let highlandURL = Bundle.module.url(forResource: "test", withExtension: "highland") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.highland not found in test bundle"])
+    }
+
+    // Extract highland to temp directory
+    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+    defer {
+        try? FileManager.default.removeItem(at: tempDir)
+    }
+
+    try FileManager.default.unzipItem(at: highlandURL, to: tempDir)
+    let contents = try FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil)
+    guard let textBundleURL = contents.first(where: { $0.pathExtension == "textbundle" }) else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "No textbundle found in highland file"])
+    }
+
+    let highlandContentURL = try script.getContentURL(from: textBundleURL)
+    #expect(FileManager.default.fileExists(atPath: highlandContentURL.path), "Highland content file should exist")
+
+    let highlandContent = try String(contentsOf: highlandContentURL, encoding: .utf8)
+    #expect(!highlandContent.isEmpty, "Highland content should not be empty")
+}
+
+@Test func testGetContent() async throws {
+    let script = FountainScript()
+
+    // Test getContent with .textbundle
+    guard let testBundleURL = Bundle.module.url(forResource: "test", withExtension: "textbundle") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.textbundle not found in test bundle"])
+    }
+
+    let content = try script.getContent(from: testBundleURL)
+    #expect(!content.isEmpty, "Content should not be empty")
+    #expect(content.contains("FADE IN:") || content.contains("INT.") || content.contains("EXT."),
+            "Content should contain screenplay elements")
+}
+
 @Test func testLoadFromTextBundle() async throws {
     // Get the path to the test bundle from resources
     guard let testBundleURL = Bundle.module.url(forResource: "test", withExtension: "textbundle") else {

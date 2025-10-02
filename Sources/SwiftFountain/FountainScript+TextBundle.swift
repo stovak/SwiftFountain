@@ -43,32 +43,51 @@ extension FountainScript {
     /// - Parameters:
     ///   - textBundleURL: URL to the .textbundle or .textpack file
     ///   - parser: The parser type to use (default: .fast)
-    /// - Throws: FountainTextBundleError if no .fountain file is found
+    /// - Throws: FountainTextBundleError if no .fountain or .md file is found
     public func loadTextBundle(_ textBundleURL: URL, parser: ParserType = .fast) throws {
-        // Look for a .fountain file in the TextBundle's root directory
+        let contentURL = try getContentURL(from: textBundleURL)
+        try loadFile(contentURL.path, parser: parser)
+        filename = contentURL.lastPathComponent
+    }
+
+    /// Get the content file URL from a TextBundle
+    /// Looks for .fountain or .md files in the bundle's root directory
+    /// - Parameter bundleURL: URL to the .textbundle or .textpack file
+    /// - Returns: URL to the content file (.fountain or .md)
+    /// - Throws: FountainTextBundleError if no valid content file is found
+    public func getContentURL(from bundleURL: URL) throws -> URL {
         let fileManager = FileManager.default
 
         let contents = try fileManager.contentsOfDirectory(
-            at: textBundleURL,
+            at: bundleURL,
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles, .skipsSubdirectoryDescendants]
         )
 
-        var fountainURL: URL?
-
+        // First, try to find a .fountain file
         for fileURL in contents {
             if fileURL.pathExtension.lowercased() == "fountain" {
-                fountainURL = fileURL
-                break
+                return fileURL
             }
         }
 
-        guard let url = fountainURL else {
-            throw FountainTextBundleError.noFountainFileFound
+        // If no .fountain file, look for .md files
+        for fileURL in contents {
+            if fileURL.pathExtension.lowercased() == "md" {
+                return fileURL
+            }
         }
 
-        try loadFile(url.path, parser: parser)
-        filename = url.lastPathComponent
+        throw FountainTextBundleError.noContentFileFound
+    }
+
+    /// Get the content from a TextBundle as a String
+    /// - Parameter bundleURL: URL to the .textbundle or .textpack file
+    /// - Returns: The content of the .fountain or .md file
+    /// - Throws: FountainTextBundleError or file reading errors
+    public func getContent(from bundleURL: URL) throws -> String {
+        let contentURL = try getContentURL(from: bundleURL)
+        return try String(contentsOf: contentURL, encoding: .utf8)
     }
 
     /// Write the current FountainScript to a TextBundle
@@ -167,6 +186,7 @@ extension FountainScript {
 
 public enum FountainTextBundleError: Error {
     case noFountainFileFound
+    case noContentFileFound
     case cannotEnumerateBundle
     case failedToCreateBundle
 }
