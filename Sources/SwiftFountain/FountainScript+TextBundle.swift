@@ -55,7 +55,7 @@ extension FountainScript {
     /// - Parameter bundleURL: URL to the .textbundle or .textpack file
     /// - Returns: URL to the content file (.fountain or .md)
     /// - Throws: FountainTextBundleError if no valid content file is found
-    public func getContentURL(from bundleURL: URL) throws -> URL {
+    internal func getContentURL(from bundleURL: URL) throws -> URL {
         let fileManager = FileManager.default
 
         let contents = try fileManager.contentsOfDirectory(
@@ -79,15 +79,6 @@ extension FountainScript {
         }
 
         throw FountainTextBundleError.noContentFileFound
-    }
-
-    /// Get the content from a TextBundle as a String
-    /// - Parameter bundleURL: URL to the .textbundle or .textpack file
-    /// - Returns: The content of the .fountain or .md file
-    /// - Throws: FountainTextBundleError or file reading errors
-    public func getContent(from bundleURL: URL) throws -> String {
-        let contentURL = try getContentURL(from: bundleURL)
-        return try String(contentsOf: contentURL, encoding: .utf8)
     }
 
     /// Write the current FountainScript to a TextBundle

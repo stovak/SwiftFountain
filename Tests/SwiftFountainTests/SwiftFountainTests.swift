@@ -538,3 +538,88 @@ import Foundation
     try? fileManager.removeItem(at: exportedHighlandURL)
     try? fileManager.removeItem(at: extractDir)
 }
+
+@Test func testUnifiedGetContentUrl() async throws {
+    let script = FountainScript()
+
+    // Test 1: .fountain file - should return the URL as-is
+    guard let fountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found"])
+    }
+
+    let fountainContentUrl = try script.getContentUrl(from: fountainURL)
+    #expect(fountainContentUrl.path == fountainURL.path, ".fountain file should return same URL")
+
+    // Test 2: .textbundle file - should return URL to content file inside
+    guard let textbundleURL = Bundle.module.url(forResource: "test", withExtension: "textbundle") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.textbundle not found"])
+    }
+
+    let textbundleContentUrl = try script.getContentUrl(from: textbundleURL)
+    #expect(textbundleContentUrl.pathExtension.lowercased() == "fountain" ||
+            textbundleContentUrl.pathExtension.lowercased() == "md",
+            "TextBundle should return .fountain or .md file URL")
+    #expect(FileManager.default.fileExists(atPath: textbundleContentUrl.path),
+            "Content file should exist")
+
+    // Test 3: .highland file - should return URL to content file inside the textbundle
+    guard let highlandURL = Bundle.module.url(forResource: "test", withExtension: "highland") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.highland not found"])
+    }
+
+    let highlandContentUrl = try script.getContentUrl(from: highlandURL)
+    #expect(highlandContentUrl.pathExtension.lowercased() == "fountain" ||
+            highlandContentUrl.pathExtension.lowercased() == "md",
+            "Highland should return .fountain or .md file URL")
+}
+
+@Test func testUnifiedGetContent() async throws {
+    let script = FountainScript()
+
+    // Test 1: .fountain file with front matter
+    // Create a temporary .fountain file with front matter
+    let tempDir = FileManager.default.temporaryDirectory
+    let testFountainURL = tempDir.appendingPathComponent("test-frontmatter.fountain")
+
+    let fountainWithFrontMatter = """
+Title: Test Script
+Author: John Doe
+Draft date: 2025-10-02
+
+INT. KITCHEN - DAY
+
+A simple scene.
+
+JOHN
+This is dialogue.
+"""
+
+    try fountainWithFrontMatter.write(to: testFountainURL, atomically: true, encoding: .utf8)
+    defer {
+        try? FileManager.default.removeItem(at: testFountainURL)
+    }
+
+    let contentWithoutFrontMatter = try script.getContent(from: testFountainURL)
+    #expect(!contentWithoutFrontMatter.contains("Title:"),
+            "Front matter should be stripped from .fountain file")
+    #expect(!contentWithoutFrontMatter.contains("Author:"),
+            "Front matter should be stripped from .fountain file")
+    #expect(contentWithoutFrontMatter.contains("INT. KITCHEN"),
+            "Body content should be preserved")
+
+    // Test 2: .textbundle file - should return complete content
+    guard let textbundleURL = Bundle.module.url(forResource: "test", withExtension: "textbundle") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.textbundle not found"])
+    }
+
+    let textbundleContent = try script.getContent(from: textbundleURL)
+    #expect(!textbundleContent.isEmpty, "TextBundle content should not be empty")
+
+    // Test 3: .highland file - should return complete content
+    guard let highlandURL = Bundle.module.url(forResource: "test", withExtension: "highland") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.highland not found"])
+    }
+
+    let highlandContent = try script.getContent(from: highlandURL)
+    #expect(!highlandContent.isEmpty, "Highland content should not be empty")
+}
