@@ -6,7 +6,7 @@ A Swift implementation of the Fountain screenplay markup language parser.
 
 ## Overview
 
-SwiftFountain is a Swift conversion of the original Objective-C Fountain parser created by Nima Yousefi & John August. It provides full support for parsing and writing Fountain-formatted screenplays.
+SwiftFountain is a Swift conversion of the original Objective-C Fountain parser created by Nima Yousefi & John August using Claude Code 4.5 Sonnet. It provides full support for parsing and writing Fountain-formatted screenplays.
 
 ## Features
 
@@ -44,6 +44,24 @@ dependencies: [
     .package(url: "path/to/SwiftFountain", from: "1.0.0")
 ]
 ```
+
+## Examples
+
+### FountainDocumentApp - Document-Based macOS App with CoreData
+
+A complete example application demonstrating how to build a document-based macOS app that reads `.fountain`, `.highland`, and `.textbundle` files and parses them into CoreData.
+
+**Location:** `Examples/FountainDocumentApp/`
+
+**Features:**
+- SwiftUI document-based architecture using `DocumentGroup`
+- Full support for `.fountain`, `.highland`, and `.textbundle` file formats
+- CoreData integration for structured screenplay data
+- Proper UTType declarations and Info.plist configuration
+- Parse screenplay elements, title pages, and metadata into CoreData entities
+- Browse and view screenplay structure with navigation interface
+
+**See:** [FountainDocumentApp README](Examples/FountainDocumentApp/README.md) for detailed documentation.
 
 ## Usage
 
@@ -150,6 +168,86 @@ let highlandURL = try script.writeToHighland(
 
 **Note:** Highland files may contain either `.fountain` files or `text.md`/`text.markdown` files. The loader automatically detects the correct format.
 
+### Using FountainDocument for SwiftUI Document-Based Apps
+
+SwiftFountain includes `FountainDocument`, a `ReferenceFileDocument` implementation that enables you to build document-based apps supporting `.fountain`, `.highland`, and `.textbundle` files.
+
+```swift
+import SwiftUI
+import SwiftFountain
+
+@main
+struct MyApp: App {
+    var body: some Scene {
+        DocumentGroup(newDocument: { FountainDocument() }) { file in
+            ContentView(document: file.$document)
+        }
+    }
+}
+
+struct ContentView: View {
+    @Binding var document: FountainDocument
+
+    var body: some View {
+        VStack {
+            Text("Title: \(document.script.filename ?? "Untitled")")
+            Text("Elements: \(document.script.elements.count)")
+
+            List(document.script.elements, id: \.elementText) { element in
+                VStack(alignment: .leading) {
+                    Text(element.elementType)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text(element.elementText)
+                }
+            }
+        }
+    }
+}
+```
+
+**Document Type Configuration (Info.plist):**
+
+```xml
+<key>CFBundleDocumentTypes</key>
+<array>
+    <dict>
+        <key>CFBundleTypeExtensions</key>
+        <array><string>fountain</string></array>
+        <key>CFBundleTypeName</key>
+        <string>Fountain Screenplay</string>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>LSItemContentTypes</key>
+        <array><string>com.quote-unquote.fountain</string></array>
+        <key>LSHandlerRank</key>
+        <string>Owner</string>
+    </dict>
+    <!-- Add similar entries for .highland and .textbundle -->
+</array>
+
+<key>UTImportedTypeDeclarations</key>
+<array>
+    <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.quote-unquote.fountain</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+            <string>public.plain-text</string>
+            <string>public.text</string>
+        </array>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+            <key>public.filename-extension</key>
+            <array><string>fountain</string></array>
+        </dict>
+    </dict>
+    <!-- Add similar entries for .highland and .textbundle -->
+</array>
+```
+
+**See the complete example:** [FountainDocumentApp](Examples/FountainDocumentApp/) demonstrates full CoreData integration with document parsing.
+
 ### Extracting Character Information
 
 Generate a character list with dialogue statistics and scene appearances.
@@ -239,6 +337,26 @@ try script.writeOutlineJSON(to: URL(fileURLWithPath: "/path/to/outline.json"))
 - `blank`: Final element marking end of document (level -1)
 
 ## API Reference
+
+### FountainDocument
+
+SwiftUI document wrapper for `.fountain`, `.highland`, and `.textbundle` files.
+
+**Protocol:** `ReferenceFileDocument`
+
+**Static Properties:**
+- `readableContentTypes`: `[UTType]` - Supports `.fountain`, `.highland`, `.textbundle`
+- `writableContentTypes`: `[UTType]` - Can write all three formats
+
+**Instance Properties:**
+- `script`: `FountainScript` - The underlying FountainScript instance
+
+**Usage:**
+```swift
+DocumentGroup(newDocument: { FountainDocument() }) { file in
+    ContentView(document: file.$document)
+}
+```
 
 ### FountainScript
 

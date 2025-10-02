@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23231" systemVersion="24A335" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="FountainDocumentEntity" representedClassName="FountainDocumentEntity" syncable="YES">
+        <attribute name="filename" optional="YES" attributeType="String"/>
+        <attribute name="rawContent" optional="YES" attributeType="String"/>
+        <attribute name="suppressSceneNumbers" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <relationship name="elements" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="FountainElementEntity" inverseName="document" inverseEntity="FountainElementEntity"/>
+        <relationship name="titlePage" optional="YES" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="TitlePageEntry" inverseName="document" inverseEntity="TitlePageEntry"/>
+    </entity>
+    <entity name="FountainElementEntity" representedClassName="FountainElementEntity" syncable="YES">
+        <attribute name="elementText" attributeType="String"/>
+        <attribute name="elementType" attributeType="String"/>
+        <attribute name="isCentered" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isDualDialogue" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="sceneNumber" optional="YES" attributeType="String"/>
+        <attribute name="sectionDepth" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="document" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="FountainDocumentEntity" inverseName="elements" inverseEntity="FountainDocumentEntity"/>
+    </entity>
+    <entity name="TitlePageEntry" representedClassName="TitlePageEntry" syncable="YES">
+        <attribute name="key" attributeType="String"/>
+        <attribute name="values" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData" customClassName="[String]"/>
+        <relationship name="document" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="FountainDocumentEntity" inverseName="titlePage" inverseEntity="FountainDocumentEntity"/>
+    </entity>
+</model>
