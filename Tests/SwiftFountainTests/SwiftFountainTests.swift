@@ -164,3 +164,109 @@ import Foundation
     // Clean up temp file
     try? FileManager.default.removeItem(at: outputPath)
 }
+
+@Test func testWriteToTextBundleWithResources() async throws {
+    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
+    let script = try FountainScript(file: testFountainPath)
+
+    let tempDir = FileManager.default.temporaryDirectory
+    let outputURL = try script.writeToTextBundleWithResources(
+        destinationURL: tempDir,
+        name: "test-output",
+        includeResources: true
+    )
+
+    // Verify the TextBundle was created
+    #expect(FileManager.default.fileExists(atPath: outputURL.path))
+
+    // Verify the .fountain file exists
+    let fountainURL = outputURL.appendingPathComponent("test-output.fountain")
+    #expect(FileManager.default.fileExists(atPath: fountainURL.path))
+
+    // Verify resources directory exists
+    let resourcesDir = outputURL.appendingPathComponent("resources")
+    #expect(FileManager.default.fileExists(atPath: resourcesDir.path))
+
+    // Verify characters.json exists and is valid
+    let charactersURL = resourcesDir.appendingPathComponent("characters.json")
+    #expect(FileManager.default.fileExists(atPath: charactersURL.path))
+
+    let charactersData = try Data(contentsOf: charactersURL)
+    let characters = try JSONDecoder().decode(CharacterList.self, from: charactersData)
+    #expect(!characters.isEmpty, "Characters JSON should have content")
+
+    // Verify outline.json exists and is valid
+    let outlineURL = resourcesDir.appendingPathComponent("outline.json")
+    #expect(FileManager.default.fileExists(atPath: outlineURL.path))
+
+    let outlineData = try Data(contentsOf: outlineURL)
+    let outline = try JSONDecoder().decode(OutlineList.self, from: outlineData)
+    #expect(!outline.isEmpty, "Outline JSON should have content")
+
+    // Clean up
+    try? FileManager.default.removeItem(at: outputURL)
+}
+
+@Test func testLoadFromHighland() async throws {
+    let highlandURL = URL(fileURLWithPath: "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.highland")
+
+    let script = try FountainScript(highlandURL: highlandURL)
+
+    #expect(!script.elements.isEmpty, "Highland file should contain elements")
+    // Highland files may use text.md instead of .fountain extension
+    #expect(script.filename != nil, "Should extract filename")
+}
+
+@Test func testWriteToHighland() async throws {
+    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
+    let script = try FountainScript(file: testFountainPath)
+
+    let tempDir = FileManager.default.temporaryDirectory
+    let highlandURL = try script.writeToHighland(
+        destinationURL: tempDir,
+        name: "test-output",
+        includeResources: true
+    )
+
+    // Verify the Highland file was created
+    #expect(FileManager.default.fileExists(atPath: highlandURL.path))
+    #expect(highlandURL.pathExtension == "highland")
+
+    // Verify we can load it back
+    let loadedScript = try FountainScript(highlandURL: highlandURL)
+    #expect(!loadedScript.elements.isEmpty, "Loaded script should have elements")
+
+    // Clean up
+    try? FileManager.default.removeItem(at: highlandURL)
+}
+
+@Test func testHighlandRoundTrip() async throws {
+    let testFountainPath = "/Users/stovak/Projects/tablereader/swift/SwiftFountain/Tests/SwiftFountainTests/test.fountain"
+    let originalScript = try FountainScript(file: testFountainPath)
+
+    let tempDir = FileManager.default.temporaryDirectory
+
+    // Write to Highland with resources
+    let highlandURL = try originalScript.writeToHighland(
+        destinationURL: tempDir,
+        name: "roundtrip-test",
+        includeResources: true
+    )
+
+    // Load it back
+    let loadedScript = try FountainScript(highlandURL: highlandURL)
+
+    // Verify the content is reasonable (element count may differ slightly due to formatting)
+    #expect(loadedScript.elements.count > 0, "Loaded script should have elements")
+    #expect(loadedScript.titlePage.count == originalScript.titlePage.count, "Title page should match")
+
+    // Verify resources can be extracted
+    let characters = loadedScript.extractCharacters()
+    #expect(!characters.isEmpty, "Should be able to extract characters from loaded script")
+
+    let outline = loadedScript.extractOutline()
+    #expect(!outline.isEmpty, "Should be able to extract outline from loaded script")
+
+    // Clean up
+    try? FileManager.default.removeItem(at: highlandURL)
+}

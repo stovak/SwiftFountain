@@ -106,6 +106,61 @@ extension FountainScript {
 
         return finalURL
     }
+
+    /// Write the current FountainScript to a TextBundle with resources (characters.json, outline.json)
+    /// - Parameters:
+    ///   - destinationURL: The URL where the TextBundle should be created
+    ///   - name: The base name for the TextBundle (without extension)
+    ///   - includeResources: Whether to include characters.json and outline.json in resources folder
+    /// - Returns: The URL of the created TextBundle
+    /// - Throws: Writing errors
+    @discardableResult
+    public func writeToTextBundleWithResources(
+        destinationURL: URL,
+        name: String,
+        includeResources: Bool = true
+    ) throws -> URL {
+        return try createTextBundleWithResources(
+            destinationURL: destinationURL,
+            name: name,
+            includeResources: includeResources
+        )
+    }
+
+    /// Internal helper to create a TextBundle with resources
+    internal func createTextBundleWithResources(
+        destinationURL: URL,
+        name: String,
+        includeResources: Bool
+    ) throws -> URL {
+        let fileManager = FileManager.default
+
+        // First create the basic textbundle
+        let textBundleURL = try writeToTextBundle(
+            destinationURL: destinationURL,
+            fountainFilename: "\(name).fountain"
+        )
+
+        // Add resources if requested
+        if includeResources {
+            let resourcesDir = textBundleURL.appendingPathComponent("resources")
+
+            // Create resources directory if it doesn't exist
+            if !fileManager.fileExists(atPath: resourcesDir.path) {
+                try fileManager.createDirectory(at: resourcesDir, withIntermediateDirectories: true)
+            }
+
+            // Write characters.json
+            let charactersURL = resourcesDir.appendingPathComponent("characters.json")
+            try writeCharactersJSON(to: charactersURL)
+
+            // Write outline.json
+            let outlineURL = resourcesDir.appendingPathComponent("outline.json")
+            try writeOutlineJSON(to: outlineURL)
+        }
+
+        return textBundleURL
+    }
 }
 
 // MARK: - Error Types

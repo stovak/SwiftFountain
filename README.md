@@ -1,5 +1,7 @@
 # SwiftFountain
 
+[![Tests](https://github.com/stovak/SwiftFountain/actions/workflows/tests.yml/badge.svg)](https://github.com/stovak/SwiftFountain/actions/workflows/tests.yml)
+
 A Swift implementation of the Fountain screenplay markup language parser.
 
 ## Overview
@@ -119,7 +121,34 @@ let outputURL = try script.writeToTextBundle(
     destinationURL: URL(fileURLWithPath: "/path/to/destination"),
     fountainFilename: "screenplay.fountain"
 )
+
+// Write to TextBundle with resources (characters.json, outline.json)
+let bundleURL = try script.writeToTextBundleWithResources(
+    destinationURL: URL(fileURLWithPath: "/path/to/destination"),
+    name: "screenplay",
+    includeResources: true
+)
 ```
+
+### Working with Highland Files
+
+SwiftFountain supports reading and writing Highland 2 files (`.highland`), which are ZIP archives containing TextBundles with screenplay data and resources.
+
+```swift
+import SwiftFountain
+
+// Read a .highland file
+let script = try FountainScript(highlandURL: URL(fileURLWithPath: "/path/to/script.highland"))
+
+// Write to a new Highland file with resources
+let highlandURL = try script.writeToHighland(
+    destinationURL: URL(fileURLWithPath: "/path/to/destination"),
+    name: "screenplay",
+    includeResources: true
+)
+```
+
+**Note:** Highland files may contain either `.fountain` files or `text.md`/`text.markdown` files. The loader automatically detects the correct format.
 
 ### Extracting Character Information
 
@@ -220,11 +249,13 @@ The main class for working with Fountain scripts.
 - `init(file:parser:)`: Load a script from a file
 - `init(string:parser:)`: Load a script from a string
 - `init(textBundleURL:parser:)`: Load from a TextBundle containing a .fountain file
+- `init(highlandURL:parser:)`: Load from a Highland (.highland) file
 
 **Loading:**
 - `loadFile(_:parser:)`: Load a file into an existing script
 - `loadString(_:parser:)`: Load a string into an existing script
 - `loadTextBundle(_:parser:)`: Load from a TextBundle URL
+- `loadHighland(_:parser:)`: Load from a Highland file URL
 
 **Writing:**
 - `stringFromDocument()`: Get the complete document as Fountain text
@@ -233,6 +264,8 @@ The main class for working with Fountain scripts.
 - `write(toFile:)`: Write to a file path
 - `write(to:)`: Write to a URL
 - `writeToTextBundle(destinationURL:fountainFilename:)`: Write to a TextBundle
+- `writeToTextBundleWithResources(destinationURL:name:includeResources:)`: Write to a TextBundle with resources
+- `writeToHighland(destinationURL:name:includeResources:)`: Write to a Highland file
 
 **Analysis:**
 - `extractCharacters()`: Returns `CharacterList` - dictionary of character names to character information

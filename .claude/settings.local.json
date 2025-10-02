@@ -5,7 +5,9 @@
       "Bash(swift build)",
       "Bash(cat:*)",
       "Bash(swift test)",
-      "Bash(swift:*)"
+      "Bash(swift:*)",
+      "Bash(unzip:*)",
+      "Bash(git remote get-url:*)"
     ],
     "deny": [],
     "ask": []
