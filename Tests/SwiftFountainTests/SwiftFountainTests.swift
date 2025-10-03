@@ -623,3 +623,48 @@ This is dialogue.
     let highlandContent = try script.getContent(from: highlandURL)
     #expect(!highlandContent.isEmpty, "Highland content should not be empty")
 }
+
+@Test func testGetScreenplayElements() async throws {
+    // Test 1: Script with existing elements should return them immediately
+    let script1 = FountainScript()
+    let element1 = FountainElement()
+    element1.elementType = "Scene Heading"
+    element1.elementText = "INT. TEST ROOM - DAY"
+    script1.elements.append(element1)
+
+    let elements1 = try script1.getScreenplayElements()
+    #expect(elements1.count == 1, "Should return existing elements")
+    #expect(elements1[0].elementType == "Scene Heading", "Should preserve element type")
+
+    // Test 2: Script with no elements but loaded from file should parse on demand
+    guard let testFountainURL = Bundle.module.url(forResource: "test", withExtension: "fountain") else {
+        throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "test.fountain not found"])
+    }
+
+    let script2 = try FountainScript(file: testFountainURL.path)
+    // Clear the elements to simulate a state where we need to parse
+    let originalElementCount = script2.elements.count
+    script2.elements = []
+
+    let elements2 = try script2.getScreenplayElements()
+    #expect(!elements2.isEmpty, "Should parse and return elements")
+    #expect(elements2.count == originalElementCount, "Should have same number of elements as original parse")
+
+    // Test 3: Empty script with URL should use getContent to parse
+    let script3 = FountainScript()
+    let elements3 = try script3.getScreenplayElements(from: testFountainURL)
+    #expect(!elements3.isEmpty, "Should parse from URL using getContent")
+    #expect(script3.elements.count == elements3.count, "Elements should be stored in script")
+
+    // Test 4: Empty script should throw error
+    let script4 = FountainScript()
+    do {
+        _ = try script4.getScreenplayElements()
+        #expect(Bool(false), "Should throw error for empty script")
+    } catch FountainScriptError.noContentToParse {
+        // Expected error
+        #expect(Bool(true))
+    } catch {
+        throw error
+    }
+}

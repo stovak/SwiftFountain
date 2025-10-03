@@ -37,6 +37,7 @@ public class FountainScript {
     public var elements: [FountainElement] = []
     public var titlePage: [[String: [String]]] = []
     public var suppressSceneNumbers: Bool = false
+    private var cachedContent: String?
 
     public init() {}
 
@@ -53,6 +54,9 @@ public class FountainScript {
     public func loadFile(_ path: String, parser: ParserType = .fast) throws {
         filename = URL(fileURLWithPath: path).lastPathComponent
 
+        // Cache the file content for potential re-parsing
+        cachedContent = try String(contentsOfFile: path, encoding: .utf8)
+
         switch parser {
         case .fast:
             let fountainParser = try FastFountainParser(file: path)
@@ -66,6 +70,9 @@ public class FountainScript {
 
     public func loadString(_ string: String, parser: ParserType = .fast) throws {
         filename = nil
+
+        // Cache the string content for potential re-parsing
+        cachedContent = string
 
         switch parser {
         case .fast:
@@ -98,6 +105,42 @@ public class FountainScript {
     public func write(to url: URL) throws {
         let document = FountainWriter.document(from: self)
         try document.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    /// Get screenplay elements, parsing the document if needed
+    /// - Parameters:
+    ///   - fileURL: URL to a .fountain, .highland, or .textbundle file (optional)
+    ///   - parser: The parser type to use if parsing is needed (default: .fast)
+    /// - Returns: Array of FountainElement objects
+    /// - Throws: Errors if the document needs to be parsed but contains no content
+    public func getScreenplayElements(from fileURL: URL? = nil, parser: ParserType = .fast) throws -> [FountainElement] {
+        // If we already have elements, return them
+        if !elements.isEmpty {
+            return elements
+        }
+
+        // If a URL is provided, use getContent to retrieve the content
+        if let url = fileURL {
+            let content = try getContent(from: url)
+            try loadString(content, parser: parser)
+            return elements
+        }
+
+        // If no URL but we have cached content, re-parse it
+        if let content = cachedContent, !content.isEmpty {
+            try loadString(content, parser: parser)
+            return elements
+        }
+
+        // Try to get content from the current state (title page + elements)
+        let documentString = stringFromDocument()
+        if !documentString.isEmpty {
+            try loadString(documentString, parser: parser)
+            return elements
+        }
+
+        // No elements and no content to parse
+        throw FountainScriptError.noContentToParse
     }
 
     /// Get the content URL for a Fountain file
@@ -239,4 +282,5 @@ extension FountainScript: CustomStringConvertible {
 
 public enum FountainScriptError: Error {
     case unsupportedFileType
+    case noContentToParse
 }

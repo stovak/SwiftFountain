@@ -124,6 +124,39 @@ let url = URL(fileURLWithPath: "/path/to/output.fountain")
 try script.write(to: url)
 ```
 
+### Getting Content from Any Format
+
+```swift
+let script = FountainScript()
+
+// Get content URL for any supported format
+let fountainURL = URL(fileURLWithPath: "/path/to/script.fountain")
+let contentURL = try script.getContentUrl(from: fountainURL)
+// Returns: /path/to/script.fountain
+
+let textbundleURL = URL(fileURLWithPath: "/path/to/script.textbundle")
+let contentURL = try script.getContentUrl(from: textbundleURL)
+// Returns: /path/to/script.textbundle/script.fountain (or .md if no .fountain exists)
+
+let highlandURL = URL(fileURLWithPath: "/path/to/script.highland")
+let contentURL = try script.getContentUrl(from: highlandURL)
+// Returns: URL to the .fountain or .md file inside the extracted archive
+
+// Get content as a string
+let content = try script.getContent(from: fountainURL)
+// For .fountain files: Returns body content without front matter
+// For .textbundle/.highland: Returns complete file content
+
+// Get screenplay elements, parsing if needed
+let elements = try script.getScreenplayElements()
+// Returns existing elements if available, or parses from cached content
+
+// Parse from a URL if elements don't exist
+let emptyScript = FountainScript()
+let elements = try emptyScript.getScreenplayElements(from: fountainURL)
+// Reads content using getContent() and parses it
+```
+
 ### Working with TextBundles
 
 SwiftFountain supports reading and writing `.fountain` files within TextBundle/TextPack containers.
@@ -384,6 +417,11 @@ The main class for working with Fountain scripts.
 - `writeToTextBundle(destinationURL:fountainFilename:)`: Write to a TextBundle
 - `writeToTextBundleWithResources(destinationURL:name:includeResources:)`: Write to a TextBundle with resources
 - `writeToHighland(destinationURL:name:includeResources:)`: Write to a Highland file
+
+**Content Access:**
+- `getContentUrl(from:)`: Get the URL to the content file for any supported format (.fountain, .highland, .textbundle)
+- `getContent(from:)`: Get content as a string from any supported format (strips front matter from .fountain files)
+- `getScreenplayElements(from:parser:)`: Get screenplay elements, parsing if needed (optionally from URL)
 
 **Analysis:**
 - `extractCharacters()`: Returns `CharacterList` - dictionary of character names to character information
