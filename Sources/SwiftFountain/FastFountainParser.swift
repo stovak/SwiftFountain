@@ -284,7 +284,7 @@ public class FastFountainParser {
             }
 
             // Scene Headings
-            if newlinesBefore > 0 && matches(string: line, pattern: "^(INT|EXT|EST|(I|INT)\\.?\\/(E|EXT)\\.?)[\\.\\-\\s][^\\n]+$", caseInsensitive: true) {
+            if newlinesBefore > 0 && (matches(string: line, pattern: "^(INT|EXT|EST|(I|INT)\\.?\\/(E|EXT)\\.?)[\\.\\-\\s][^\\n]+$", caseInsensitive: true) || matches(string: line, pattern: "^OVER BLACK$", caseInsensitive: true)) {
                 newlinesBefore = 0
                 var sceneNumber: String?
                 var text = ""

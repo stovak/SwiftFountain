@@ -6,6 +6,41 @@ import Foundation
     // Write your test here and use APIs like `#expect(...)` to check expected conditions.
 }
 
+@Test func testOverBlackSceneHeading() async throws {
+    let fountainContent = """
+OVER BLACK
+
+A screenplay element to be recognized as a scene header.
+
+INT. LIVING ROOM - DAY
+
+Another scene heading.
+
+over black
+
+This should also be recognized as a scene header (case insensitive).
+"""
+    
+    // Test with FastFountainParser (default)
+    let script = try FountainScript(string: fountainContent, parser: .fast)
+    
+    #expect(script.elements.count >= 3, "Should have at least 3 elements")
+    
+    // Check that OVER BLACK is recognized as a scene heading
+    let overBlackElement = script.elements.first { $0.elementType == "Scene Heading" && $0.elementText.contains("OVER BLACK") }
+    #expect(overBlackElement != nil, "OVER BLACK should be recognized as a Scene Heading")
+    #expect(overBlackElement?.elementText == "OVER BLACK", "Element text should match exactly")
+    
+    // Check that the lowercase version is also recognized
+    let lowerOverBlackElement = script.elements.first { $0.elementType == "Scene Heading" && $0.elementText.lowercased().contains("over black") }
+    #expect(lowerOverBlackElement != nil, "over black (lowercase) should be recognized as a Scene Heading")
+    
+    // Test with regex parser too
+    let regexScript = try FountainScript(string: fountainContent, parser: .regex)
+    let regexOverBlackElement = regexScript.elements.first { $0.elementType == "Scene Heading" && $0.elementText.contains("OVER BLACK") }
+    #expect(regexOverBlackElement != nil, "OVER BLACK should be recognized as a Scene Heading with regex parser")
+}
+
 @Test func testGetContentURL() async throws {
     let script = FountainScript()
 
@@ -180,16 +215,31 @@ import Foundation
     let sectionHeaders = outline.filter { $0.type == "sectionHeader" }
     #expect(!sectionHeaders.isEmpty, "Should have section headers")
 
-    // Verify first element is CHAPTER 1
+    // Verify first element is auto-generated title (level 1) since test.fountain has no level 1 header
     if let firstElement = outline.first {
         #expect(firstElement.type == "sectionHeader", "First element should be section header")
-        #expect(firstElement.string.contains("CHAPTER"), "First element should be a chapter")
-        #expect(firstElement.level == 2, "Chapter headers should be level 2")
+        #expect(firstElement.level == 1, "Auto-generated title should be level 1")
+        #expect(firstElement.isMainTitle, "First element should be main title")
+        #expect(firstElement.string == "test", "Auto-generated title should match filename")
+    }
+    
+    // Verify second element is CHAPTER 1 (level 2)
+    if outline.count > 1 {
+        let secondElement = outline[1]
+        #expect(secondElement.type == "sectionHeader", "Second element should be section header")
+        #expect(secondElement.string.contains("CHAPTER"), "Second element should be a chapter")
+        #expect(secondElement.level == 2, "Chapter headers should be level 2")
+        #expect(secondElement.isChapter, "Second element should be chapter")
     }
 
     // Verify indexes are sequential
     for (i, element) in outline.enumerated() {
         #expect(element.index == i, "Index should match position in array")
+    }
+
+    // TEST API COMPATIBILITY: Verify all outline elements have elementType "outline"
+    for element in outline {
+        #expect(element.elementType == "outline", "All outline elements should have elementType 'outline' for API compatibility")
     }
 }
 
@@ -729,5 +779,195 @@ This is dialogue.
         let nonExistentCharacter = script.firstDialogue(for: "NONEXISTENT")
         #expect(nonExistentCharacter == nil,
                 "\(ext): Should return nil for non-existent character")
+    }
+}
+
+@Suite("Outline Hierarchy Functional Tests")
+struct OutlineHierarchyFunctionalTests {
+    
+    @Test("Functional test: Outline hierarchy across all fixture files")
+    func testOutlineHierarchyAcrossFixtureFiles() async throws {
+        let testFiles: [(name: String, ext: String)] = [
+            ("test", "fountain"),
+            ("test", "textbundle"), 
+            ("test", "highland")
+        ]
+        
+        for (name, ext) in testFiles {
+            guard let fileURL = Bundle.module.url(forResource: name, withExtension: ext) else {
+                throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "\(name).\(ext) not found"])
+            }
+            
+            // Load script using appropriate method
+            let script: FountainScript
+            switch ext {
+            case "fountain":
+                script = try FountainScript(file: fileURL.path)
+            case "textbundle":
+                script = try FountainScript(textBundleURL: fileURL)
+            case "highland":
+                script = try FountainScript(highlandURL: fileURL)
+            default:
+                continue
+            }
+            
+            // Extract outline and tree for hierarchical analysis
+            let outline = script.extractOutline()
+            let tree = script.extractOutlineTree()
+            
+            print("Testing \(name).\(ext) - Outline has \(outline.count) elements")
+            
+            // VERIFY OVERALL STRUCTURE
+            #expect(!outline.isEmpty, "\(ext): Should have outline elements")
+            #expect(tree.root != nil, "\(ext): Tree should have a root")
+            
+            // VERIFY LEVEL 1 (MAIN TITLE)
+            let level1Elements = outline.filter { $0.level == 1 }
+            #expect(level1Elements.count == 1, "\(ext): Should have exactly 1 level 1 element (main title)")
+            
+            let mainTitle = level1Elements.first!
+            #expect(mainTitle.isMainTitle, "\(ext): Level 1 should be main title")
+            #expect(mainTitle.parentId == nil, "\(ext): Main title should have no parent")
+            #expect(mainTitle.string == "test", "\(ext): Main title should be 'test' (auto-generated)")
+            
+            // VERIFY LEVEL 2 (CHAPTERS AND END MARKERS)
+            let level2Elements = outline.filter { $0.level == 2 }
+            let chapters = level2Elements.filter { !$0.isEndMarker }
+            let endMarkers = level2Elements.filter { $0.isEndMarker }
+            
+            #expect(chapters.count >= 2, "\(ext): Should have at least 2 chapters")
+            #expect(endMarkers.count >= 2, "\(ext): Should have at least 2 END markers")
+            
+            // Verify specific chapter structure from test.fountain
+            let chapter1 = chapters.first { $0.string.contains("CHAPTER 1") }
+            let chapter2 = chapters.first { $0.string.contains("CHAPTER 2") }
+            
+            #expect(chapter1 != nil, "\(ext): Should have CHAPTER 1")
+            #expect(chapter2 != nil, "\(ext): Should have CHAPTER 2")
+            
+            // Verify chapters are children of main title
+            for chapter in chapters {
+                #expect(chapter.isChapter, "\(ext): Chapter should be identified as chapter")
+                #expect(chapter.parentId == mainTitle.id, "\(ext): Chapters should be children of main title")
+                #expect(mainTitle.childIds.contains(chapter.id), "\(ext): Main title should contain chapters as children")
+            }
+            
+            // Verify END markers behavior
+            let endChapter1 = endMarkers.first { $0.string.contains("END CHAPTER 1") }
+            let endChapter2 = endMarkers.first { $0.string.contains("END CHAPTER 2") }
+            
+            #expect(endChapter1 != nil, "\(ext): Should have END CHAPTER 1 marker")
+            #expect(endChapter2 != nil, "\(ext): Should have END CHAPTER 2 marker")
+            
+            for endMarker in endMarkers {
+                #expect(endMarker.isEndMarker, "\(ext): END marker should be identified as end marker")
+                #expect(endMarker.level == 2, "\(ext): END markers should be level 2")
+                #expect(endMarker.childIds.isEmpty, "\(ext): END markers should not have children")
+                #expect(endMarker.parentId == nil, "\(ext): END markers should not have parents (don't participate in hierarchy)")
+            }
+            
+            // VERIFY LEVEL 3 (SCENE DIRECTIVES)
+            let level3Elements = outline.filter { $0.level == 3 }
+            let sceneDirectives = level3Elements.filter { $0.isSceneDirective }
+            
+            #expect(sceneDirectives.count >= 5, "\(ext): Should have at least 5 scene directives")
+            
+            // Verify specific scene directives from test.fountain
+            let expectedDirectives = ["PROLOGUE", "THE", "CABARET", "FUNERAL", "Steam"]
+            let foundDirectives = sceneDirectives.compactMap { $0.sceneDirective }
+            
+            for expectedDirective in expectedDirectives {
+                let found = foundDirectives.contains { $0.contains(expectedDirective) }
+                #expect(found, "\(ext): Should contain scene directive starting with '\(expectedDirective)'")
+            }
+            
+            // Verify scene directives are properly parented to chapters
+            for directive in sceneDirectives {
+                #expect(directive.isSceneDirective, "\(ext): Should be identified as scene directive")
+                
+                if let parentId = directive.parentId {
+                    let parent = outline.first { $0.id == parentId }
+                    #expect(parent != nil, "\(ext): Scene directive parent should exist")
+                    #expect(parent?.isChapter == true, "\(ext): Scene directive parent should be a chapter")
+                    #expect(parent?.childIds.contains(directive.id) == true, "\(ext): Parent chapter should contain directive as child")
+                }
+            }
+            
+            // VERIFY LEVEL 4 (SCENE HEADERS)
+            let level4Elements = outline.filter { $0.level == 4 }
+            let sceneHeaders = level4Elements.filter { $0.type == "sceneHeader" }
+            
+            #expect(sceneHeaders.count >= 10, "\(ext): Should have at least 10 scene headers")
+            
+            // Verify some expected scene headers
+            let expectedScenes = ["INT. STEAM ROOM", "INT. HOME", "INT. CABARET", "EXT. CEMETERY"]
+            let foundScenes = sceneHeaders.map { $0.string }
+            
+            for expectedScene in expectedScenes {
+                let found = foundScenes.contains { $0.contains(expectedScene) }
+                #expect(found, "\(ext): Should contain scene header with '\(expectedScene)'")
+            }
+            
+            // VERIFY TREE STRUCTURE
+            if let rootNode = tree.root {
+                #expect(rootNode.element.id == mainTitle.id, "\(ext): Tree root should be main title")
+                #expect(rootNode.parent == nil, "\(ext): Root should have no parent")
+                #expect(rootNode.depth == 0, "\(ext): Root depth should be 0")
+                #expect(rootNode.hasChildren, "\(ext): Root should have children")
+                
+                // Verify tree structure matches outline relationships
+                let treeNodeCount = tree.allNodes.count
+                let nonEndMarkerElements = outline.filter { !$0.isEndMarker && $0.level != -1 } // Exclude END markers and blank
+                #expect(treeNodeCount == nonEndMarkerElements.count, 
+                        "\(ext): Tree should contain all non-end-marker elements (expected: \(nonEndMarkerElements.count), got: \(treeNodeCount))")
+                
+                // Verify chapter nodes
+                for chapterNode in rootNode.children {
+                    #expect(chapterNode.element.isChapter, "\(ext): Root children should be chapters")
+                    #expect(chapterNode.parent === rootNode, "\(ext): Chapter parent should be root")
+                    #expect(chapterNode.depth == 1, "\(ext): Chapter depth should be 1")
+                    
+                    // Verify scene directive nodes under chapters
+                    for directiveNode in chapterNode.children {
+                        #expect(directiveNode.element.isSceneDirective, "\(ext): Chapter children should be scene directives")
+                        #expect(directiveNode.parent === chapterNode, "\(ext): Directive parent should be chapter")
+                        #expect(directiveNode.depth == 2, "\(ext): Directive depth should be 2")
+                    }
+                }
+            }
+            
+            // VERIFY PARENT/CHILD METHODS WORK CORRECTLY
+            for element in outline {
+                // Test parent() method
+                if let parentId = element.parentId {
+                    let parent = element.parent(from: outline)
+                    #expect(parent?.id == parentId, "\(ext): parent() method should return correct parent")
+                } else {
+                    let parent = element.parent(from: outline)
+                    #expect(parent == nil, "\(ext): parent() should return nil for elements without parent")
+                }
+                
+                // Test children() method
+                let children = element.children(from: outline)
+                #expect(children.count == element.childIds.count, "\(ext): children() count should match childIds count")
+                
+                for child in children {
+                    #expect(element.childIds.contains(child.id), "\(ext): children() should return elements in childIds")
+                    #expect(child.parentId == element.id, "\(ext): Child's parentId should match element id")
+                }
+                
+                // Test descendants() method
+                let descendants = element.descendants(from: outline)
+                let directChildren = element.children(from: outline)
+                #expect(descendants.count >= directChildren.count, "\(ext): descendants should include at least direct children")
+            }
+            
+            // VERIFY API COMPATIBILITY
+            for element in outline {
+                #expect(element.elementType == "outline", "\(ext): All elements should have elementType 'outline'")
+            }
+            
+            print("✅ \(name).\(ext) hierarchy validation complete")
+        }
     }
 }

@@ -321,7 +321,7 @@ try script.writeCharactersJSON(to: URL(fileURLWithPath: "/path/to/characters.jso
 
 ### Extracting Outline Structure
 
-Generate a hierarchical outline of the screenplay structure.
+Generate a hierarchical outline of the screenplay structure with parent-child relationships.
 
 ```swift
 // Extract the outline
@@ -330,6 +330,26 @@ let outline: OutlineList = script.extractOutline()
 // Access outline elements
 for element in outline {
     print("[\(element.level)] \(element.type): \(element.string)")
+}
+
+// Access parent-child relationships
+for element in outline {
+    if let parent = element.parent(from: outline) {
+        print("\(element.string) is child of \(parent.string)")
+    }
+    
+    let children = element.children(from: outline)
+    if !children.isEmpty {
+        print("\(element.string) has \(children.count) children")
+    }
+}
+
+// Create a tree structure for hierarchical processing
+let tree = outline.tree()
+if let root = tree.root {
+    print("Root: \(root.element.string)")
+    print("Tree has \(tree.allNodes.count) total nodes")
+    print("Tree has \(tree.leafNodes.count) leaf nodes")
 }
 
 // Write outline to JSON
@@ -344,30 +364,80 @@ try script.writeOutlineJSON(to: URL(fileURLWithPath: "/path/to/outline.json"))
     "id": "UUID-STRING",
     "index": 0,
     "isCollapsed": false,
-    "level": 2,
+    "level": 1,
     "range": [0, 12],
-    "rawString": "## CHAPTER 1",
-    "string": "CHAPTER 1",
-    "type": "sectionHeader"
+    "rawString": "# My Screenplay",
+    "string": "My Screenplay",
+    "type": "sectionHeader",
+    "sceneDirective": null,
+    "sceneDirectiveDescription": null,
+    "parentId": null,
+    "childIds": ["uuid-chapter1", "uuid-chapter2"],
+    "isEndMarker": false
   },
   {
-    "id": "UUID-STRING",
+    "id": "uuid-chapter1",
     "index": 1,
     "isCollapsed": false,
-    "level": 4,
+    "level": 2,
     "range": [238, 22],
-    "rawString": "INT. STEAM ROOM - DAY",
-    "string": "INT. STEAM ROOM - DAY",
-    "type": "sceneHeader"
+    "rawString": "## CHAPTER 1",
+    "string": "CHAPTER 1",
+    "type": "sectionHeader",
+    "sceneDirective": null,
+    "sceneDirectiveDescription": null,
+    "parentId": "UUID-STRING",
+    "childIds": ["uuid-music"],
+    "isEndMarker": false
+  },
+  {
+    "id": "uuid-music",
+    "index": 2,
+    "isCollapsed": false,
+    "level": 3,
+    "range": [400, 35],
+    "rawString": "### MUSIC: Jazz plays softly",
+    "string": "MUSIC",
+    "type": "sectionHeader",
+    "sceneDirective": "MUSIC",
+    "sceneDirectiveDescription": "Jazz plays softly",
+    "parentId": "uuid-chapter1",
+    "childIds": [],
+    "isEndMarker": false
+  },
+  {
+    "id": "uuid-end",
+    "index": 3,
+    "isCollapsed": false,
+    "level": 2,
+    "range": [600, 18],
+    "rawString": "## END CHAPTER 1",
+    "string": "END CHAPTER 1",
+    "type": "sectionHeader",
+    "sceneDirective": null,
+    "sceneDirectiveDescription": null,
+    "parentId": null,
+    "childIds": [],
+    "isEndMarker": true
   }
 ]
 ```
 
 **Outline Element Types:**
-- `sectionHeader`: Section headings (`#`, `##`, `###`, etc.) with corresponding level
+- `sectionHeader`: Section headings with hierarchical levels:
+  - **Level 1**: Main title (only one allowed, auto-generated from script name if missing)
+  - **Level 2**: Chapter-level headings (`##`) and END markers (`## END ...`)
+  - **Level 3**: Scene directive headings (`###`) - first word before colon becomes the directive name
+  - **Level 4+**: Additional nested section levels
 - `sceneHeader`: Scene headings (INT/EXT, etc.) at level 4
 - `note`: Bracketed notes (`[[NOTE: ...]]`) at level 5
 - `blank`: Final element marking end of document (level -1)
+
+**Parent-Child Relationships:**
+- Level 2 elements (chapters) are children of level 1 (main title)
+- Level 3 elements (scene directives) are children of level 2 (chapters)
+- Level 4 elements (scene headers) are children of level 3 (scene directives)
+- END markers (`## END ...`) do not participate in the parent-child hierarchy
 
 ## API Reference
 
@@ -427,7 +497,8 @@ The main class for working with Fountain scripts.
 - `extractCharacters()`: Returns `CharacterList` - dictionary of character names to character information
 - `writeCharactersJSON(toFile:)`: Write character data to JSON file
 - `writeCharactersJSON(to:)`: Write character data to JSON URL
-- `extractOutline()`: Returns `OutlineList` - array of outline elements
+- `extractOutline()`: Returns `OutlineList` - array of outline elements with parent-child relationships
+- `extractOutlineTree()`: Returns `OutlineTree` - hierarchical tree structure of outline elements
 - `writeOutlineJSON(toFile:)`: Write outline data to JSON file
 - `writeOutlineJSON(to:)`: Write outline data to JSON URL
 
@@ -463,17 +534,81 @@ Information about a character extracted from the screenplay.
 
 ### OutlineElement
 
-Represents a structural element in the screenplay outline.
+Represents a structural element in the screenplay outline with parent-child relationships.
 
 **Properties:**
 - `id`: `String` - Unique UUID for this element
 - `index`: `Int` - Sequential index in the outline
 - `isCollapsed`: `Bool` - UI hint for collapsible display (always `false`)
-- `level`: `Int` - Hierarchical level (2-5 for headers, -1 for blank end marker)
+- `level`: `Int` - Hierarchical level (1 for main title, 2 for chapters, 3 for scene directives, 4 for scenes, 5 for notes, -1 for blank end marker)
 - `range`: `[Int]` - Character position `[start, length]` in source text
-- `rawString`: `String` - Original formatting (e.g., `"## CHAPTER 1"`)
-- `string`: `String` - Clean display text (e.g., `"CHAPTER 1"`)
+- `rawString`: `String` - Original formatting (e.g., `"## CHAPTER 1"` or `"### MUSIC: Jazz plays softly"`)
+- `string`: `String` - Clean display text (e.g., `"CHAPTER 1"` or `"MUSIC"`)
 - `type`: `String` - Element type (`"sectionHeader"`, `"sceneHeader"`, `"note"`, `"blank"`)
+- `sceneDirective`: `String?` - For level 3 scene directives, the directive name (e.g., `"MUSIC"`, `"SOUND"`)
+- `sceneDirectiveDescription`: `String?` - For level 3 scene directives, the full description after the colon
+- `elementType`: `String` - Always returns `"outline"` for API compatibility with `FountainElement`
+- `parentId`: `String?` - ID of the parent element in the hierarchy
+- `childIds`: `[String]` - Array of child element IDs
+- `isEndMarker`: `Bool` - True if this is an END chapter marker (e.g., `"## END CHAPTER 1"`)
+
+**Computed Properties:**
+- `isSceneDirective`: `Bool` - Returns true if this is a scene directive (level 3 section header)
+- `isChapter`: `Bool` - Returns true if this is a chapter-level header (level 2)
+- `isMainTitle`: `Bool` - Returns true if this is the main title (level 1)
+
+**Methods:**
+- `parent(from: OutlineList)`: `OutlineElement?` - Get the parent element from the outline list
+- `children(from: OutlineList)`: `[OutlineElement]` - Get all direct children elements from the outline list
+- `descendants(from: OutlineList)`: `[OutlineElement]` - Get all descendant elements (children, grandchildren, etc.)
+
+### OutlineTree
+
+Tree structure for hierarchical processing of outline elements.
+
+**Properties:**
+- `root`: `OutlineTreeNode?` - The root node of the tree (usually the main title)
+
+**Methods:**
+- `init(from: OutlineList)` - Create a tree from an outline list
+- `node(for: String)`: `OutlineTreeNode?` - Find a node by element ID
+- `allNodes`: `[OutlineTreeNode]` - Get all nodes in the tree (flattened)
+- `leafNodes`: `[OutlineTreeNode]` - Get all leaf nodes (nodes without children)
+
+### OutlineTreeNode
+
+Node in the outline tree structure.
+
+**Properties:**
+- `element`: `OutlineElement` - The outline element this node represents
+- `children`: `[OutlineTreeNode]` - Child nodes
+- `parent`: `OutlineTreeNode?` - Parent node (weak reference)
+
+**Computed Properties:**
+- `descendants`: `[OutlineTreeNode]` - All descendant nodes
+- `hasChildren`: `Bool` - Whether this node has children
+- `depth`: `Int` - Depth of this node in the tree (root = 0)
+
+**Methods:**
+- `addChild(_: OutlineTreeNode)` - Add a child node
+
+**Usage:**
+```swift
+// Create tree structure
+let outline = script.extractOutline()
+let tree = outline.tree()
+
+// Navigate the tree
+if let root = tree.root {
+    print("Root: \(root.element.string)")
+    for chapter in root.children {
+        print("  Chapter: \(chapter.element.string)")
+        for directive in chapter.children {
+            print("    Directive: \(directive.element.string)")
+        }
+    }
+}
+```
 
 ### ParserType
 

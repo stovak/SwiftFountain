@@ -32,7 +32,7 @@ public struct FountainRegexes {
     public static let universalLineBreaksTemplate = "\n"
 
     // Match patterns
-    public static let sceneHeaderPattern = "(?<=\\n)(([iI][nN][tT]|[eE][xX][tT]|[^\\w][eE][sS][tT]|\\.|[iI]\\.?\\/[eE]\\.?)([^\\n]+))\\n"
+    public static let sceneHeaderPattern = "(?<=\\n)(([iI][nN][tT]|[eE][xX][tT]|[^\\w][eE][sS][tT]|\\.|[iI]\\.?\\/[eE]\\.?|[oO][vV][eE][rR]\\s+[bB][lL][aA][cC][kK])([^\\n]*))\\n"
     public static let actionPattern = "([^<>]*?)(\\n{2}|\\n<)"
     public static let multiLineActionPattern = "\n{2}(([^a-z\\n:]+?[\\.\\?,\\s!\\*_]*?)\\n{2}){1,2}"
     public static let characterCuePattern = "(?<=\\n)([ \\t]*[^<>a-z\\s\\/\\n][^<>a-z:!\\?\\n]*[^<>a-z\\(!\\?:,\\n\\.][ \\t]?)\\n{1}(?!\\n)"
