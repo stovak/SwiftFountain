@@ -132,4 +132,24 @@ extension FountainScript {
             .filter { !$0.isEmpty }
         return words.count
     }
+
+    /// Find the first spoken line of dialog for a given character
+    /// - Parameter characterName: The character's name (case-insensitive, extensions like (V.O.) are ignored)
+    /// - Returns: The first dialogue text spoken by the character, or nil if the character has no dialogue
+    public func firstDialogue(for characterName: String) -> String? {
+        let cleanedSearchName = cleanCharacterName(characterName)
+        var currentCharacter: String?
+
+        for element in elements {
+            if element.elementType == "Character" {
+                currentCharacter = cleanCharacterName(element.elementText)
+            } else if element.elementType == "Dialogue",
+                      let character = currentCharacter,
+                      character == cleanedSearchName {
+                return element.elementText
+            }
+        }
+
+        return nil
+    }
 }

@@ -10,7 +10,9 @@
       "Bash(git remote get-url:*)",
       "Bash(tree:*)",
       "Bash(xcodebuild:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(grep:*)",
+      "Bash(xxd:*)"
     ],
     "deny": [],
     "ask": []

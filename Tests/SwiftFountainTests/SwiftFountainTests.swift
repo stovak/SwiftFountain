@@ -668,3 +668,66 @@ This is dialogue.
         throw error
     }
 }
+
+@Test func testFirstDialogue() async throws {
+    // Test with all three fixture file types
+    let testFiles: [(String, String)] = [
+        ("test", "fountain"),
+        ("test", "textbundle"),
+        ("test", "highland")
+    ]
+
+    for (name, ext) in testFiles {
+        guard let fileURL = Bundle.module.url(forResource: name, withExtension: ext) else {
+            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "\(name).\(ext) not found"])
+        }
+
+        let script: FountainScript
+        switch ext {
+        case "fountain":
+            script = try FountainScript(file: fileURL.path)
+        case "textbundle":
+            script = try FountainScript(textBundleURL: fileURL)
+        case "highland":
+            script = try FountainScript(highlandURL: fileURL)
+        default:
+            throw NSError(domain: "TestError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unsupported extension"])
+        }
+
+        // Test BERNARD's first line (from the test.fountain fixture)
+        let bernardFirstLine = script.firstDialogue(for: "BERNARD")
+        #expect(bernardFirstLine != nil, "\(ext): BERNARD should have dialogue")
+        // Note: Using Unicode right single quotation mark (U+2019) to match the fountain file
+        #expect(bernardFirstLine?.contains("Have you thought") == true,
+                "\(ext): BERNARD's first line should contain expected text")
+
+        // Test KILLIAN's first line
+        let killianFirstLine = script.firstDialogue(for: "KILLIAN")
+        #expect(killianFirstLine != nil, "\(ext): KILLIAN should have dialogue")
+        // Note: Using Unicode right single quotation mark (U+2019) to match the fountain file
+        #expect(killianFirstLine?.contains("can") == true && killianFirstLine?.contains("think") == true,
+                "\(ext): KILLIAN's first line should contain expected text")
+
+        // Test SYLVIA's first line (she appears later, with (O.S.) extension)
+        // Note: Her first appearance has a parenthetical "(bellowing)" before dialogue
+        let sylviaFirstLine = script.firstDialogue(for: "SYLVIA")
+        #expect(sylviaFirstLine != nil, "\(ext): SYLVIA should have dialogue")
+        #expect(sylviaFirstLine?.contains("?!!!!") == true,
+                "\(ext): SYLVIA's first line should be her bellowing Bernard's name")
+
+        // Test character with extension in name (should be cleaned)
+        let sylviaOSLine = script.firstDialogue(for: "SYLVIA (O.S.)")
+        #expect(sylviaOSLine == sylviaFirstLine,
+                "\(ext): Should handle character extensions like (O.S.)")
+
+        // Test case insensitivity
+        let bernardLowerCase = script.firstDialogue(for: "bernard")
+        #expect(bernardLowerCase == bernardFirstLine,
+                "\(ext): Should be case insensitive")
+
+        // Test non-existent character
+        let nonExistentCharacter = script.firstDialogue(for: "NONEXISTENT")
+        #expect(nonExistentCharacter == nil,
+                "\(ext): Should return nil for non-existent character")
+    }
+}
